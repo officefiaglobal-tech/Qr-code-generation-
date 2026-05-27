@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Primative Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validator
+    function isValidCandidate(candidate) {
+      return candidate.id is string && candidate.id.size() <= 128
+        && candidate.organizationName is string && candidate.organizationName.size() <= 200
+        && candidate.candidateName is string && candidate.candidateName.size() <= 200
+        && candidate.dob is string && candidate.dob.size() <= 50
+        && candidate.fatherName is string && candidate.fatherName.size() <= 200
+        && candidate.fullAddress is string && candidate.fullAddress.size() <= 2000
+        && candidate.candidateContact is string && candidate.candidateContact.size() <= 20
+        && (!('candidateEmail' in candidate) || (candidate.candidateEmail is string && candidate.candidateEmail.size() <= 320))
+        && candidate.fatherContact is string && candidate.fatherContact.size() <= 20
+        && candidate.policeStationContact is string && candidate.policeStationContact.size() <= 20
+        && candidate.emergencyContact is string && candidate.emergencyContact.size() <= 20
+        && candidate.emergencyWhatsApp is string && candidate.emergencyWhatsApp.size() <= 20
+        && candidate.friendContact is string && candidate.friendContact.size() <= 20
+        && candidate.relativeContact is string && candidate.relativeContact.size() <= 20
+        && candidate.aadhaarNumber is string && candidate.aadhaarNumber.size() == 12
+        && (candidate.status == 'pending' || candidate.status == 'verified' || candidate.status == 'inactive')
+        && (!('scanCount' in candidate) || candidate.scanCount is int);
+    }
+
+    // 4. Candidates Rules
+    match /candidates/{candidateId} {
+      // Individual verification profiles are public to support instant real-time QR code scanning of IDs
+      allow get: if true; 
+
+      // Listing or searching all candidate records is restricted strictly to Admins
+      allow list: if isAdmin();
+
+      // Form submission is publicly open so candidates can register themselves
+      allow create: if isValidId(candidateId)
+        && isValidCandidate(incoming())
+        && incoming().id == candidateId
+        && incoming().createdAt == request.time
+        && incoming().status == 'pending'; // Strict initial status
+
+      // Modification is permitted purely for Admin roles OR any client incrementing scanCount on QR profile scans
+      allow update: if (
+        isAdmin()
+        && isValidCandidate(incoming())
+        && incoming().createdAt == existing().createdAt
+      ) || (
+        incoming().diff(existing()).affectedKeys().hasOnly(['scanCount'])
+        && incoming().scanCount == existing().get('scanCount', 0) + 1
+      );
+
+      // Only Admins can delete historical records
+      allow delete: if isAdmin();
+    }
+
+    // 5. Admin Rules
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      // Allow Google Sign-In users to configure themselves as admins during bootstrapping or testing.
+      allow write: if isSignedIn() && request.auth.uid == adminId && (
+        request.auth.token.email == 'office.fiaglobal@gmail.com' ||
+        request.auth.token.email_verified == true ||
+        request.auth.token.email.endsWith('.com')
+      );
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Digital ID & Verification System",
+  "description": "Smart candidate registration and digital verification platform with automatic PDF generation, dynamic QR ID cards, click-to-contact actions, and admin management dashboard.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

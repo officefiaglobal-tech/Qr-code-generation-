@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Candidate": {
+      "title": "Candidate",
+      "description": "Details of a registered candidate",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique Registration ID" },
+        "organizationName": { "type": "string", "description": "Registered Organization Name" },
+        "candidateName": { "type": "string", "description": "Candidate's full name" },
+        "dob": { "type": "string", "description": "Date of Birth" },
+        "fatherName": { "type": "string", "description": "Father's name" },
+        "fullAddress": { "type": "string", "description": "Full home address" },
+        "candidateContact": { "type": "string", "description": "Phone number" },
+        "candidateEmail": { "type": "string", "description": "Candidate's email address for receiving verification update notifications" },
+        "fatherContact": { "type": "string", "description": "Phone number" },
+        "policeStationContact": { "type": "string", "description": "Phone number" },
+        "emergencyContact": { "type": "string", "description": "Phone number" },
+        "emergencyWhatsApp": { "type": "string", "description": "WhatsApp contact" },
+        "friendContact": { "type": "string", "description": "Phone number" },
+        "relativeContact": { "type": "string", "description": "Phone number" },
+        "aadhaarNumber": { "type": "string", "description": "Aadhaar Card Number" },
+        "candidatePhoto": { "type": "string", "description": "Base64 encoded compressed photo" },
+        "aadhaarFront": { "type": "string", "description": "Base64 encoded front check" },
+        "aadhaarBack": { "type": "string", "description": "Base64 encoded back check" },
+        "createdAt": { "type": "string", "description": "Firestore server timestamp" },
+        "status": { "type": "string", "description": "Current verification status (e.g., pending, verified, inactive)" },
+        "gpsLat": { "type": "number", "description": "Optional GPS latitude" },
+        "gpsLng": { "type": "number", "description": "Optional GPS longitude" },
+        "scanCount": { "type": "integer", "description": "Number of times this candidate registration has been scanned/loaded" }
+      },
+      "required": ["id", "organizationName", "candidateName", "dob", "fatherName", "fullAddress", "candidateContact", "aadhaarNumber"]
+    }
+  },
+  "firestore": {
+    "/candidates/{candidateId}": {
+      "schema": "Candidate",
+      "description": "Collection of candidate records"
+    },
+    "/admins/{adminId}": {
+      "schema": {
+        "title": "Admin",
+        "description": "Admin status flags",
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "role": { "type": "string" }
+        },
+        "required": ["email", "role"]
+      },
+      "description": "Explicit list of administrators"
+    }
+  }
+}
